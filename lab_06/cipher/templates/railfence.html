@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Rail Fence Cipher</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root { --cream:#F5F0E8; --black:#0D0D0D; --red:#C8372D; --mid:#888; }
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body { background:var(--cream); font-family:'Barlow',sans-serif; min-height:100vh; cursor:crosshair; }
+        body::after { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:999; opacity:0.6; }
+        .tape-top { width:100%; height:6px; background:repeating-linear-gradient(90deg,var(--black) 0px,var(--black) 30px,var(--red) 30px,var(--red) 60px); }
+        .page-wrap { max-width:760px; margin:0 auto; padding:52px 32px 80px; }
+        .back-nav { display:inline-flex; align-items:center; gap:8px; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--mid); text-decoration:none; margin-bottom:40px; transition:color .2s; }
+        .back-nav:hover { color:var(--black); text-decoration:none; }
+        .page-header { border-bottom:3px solid var(--black); padding-bottom:20px; margin-bottom:52px; display:flex; align-items:flex-end; justify-content:space-between; }
+        .page-header h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(48px,10vw,82px); letter-spacing:-1px; line-height:0.9; color:var(--black); }
+        .page-header h1 span { color:var(--red); }
+        .header-badge { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--mid); text-align:right; line-height:1.6; padding-bottom:6px; }
+        .cipher-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+        .cipher-panel { padding:32px; }
+        .cipher-panel:first-child { border-right:2px solid var(--black); }
+        .panel-label { display:flex; align-items:center; gap:10px; margin-bottom:28px; }
+        .panel-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+        .panel-dot.blue { background:#1a4fc4; }
+        .panel-dot.green { background:#1a8a3c; }
+        .panel-label span { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--black); }
+        .field-wrap { margin-bottom:20px; }
+        .field-wrap label { display:block; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--mid); margin-bottom:8px; }
+        .field-wrap input { width:100%; background:transparent; border:none; border-bottom:2px solid var(--black); padding:10px 0; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:600; color:var(--black); outline:none; transition:border-color .2s; -webkit-appearance:none; }
+        .field-wrap input::placeholder { color:rgba(0,0,0,0.22); font-weight:400; }
+        .field-wrap input:focus { border-bottom-color:var(--red); }
+        .submit-btn { display:inline-block; margin-top:8px; padding:13px 36px; border:2px solid var(--black); background:transparent; font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--black); cursor:crosshair; transition:background .2s,color .2s; }
+        .submit-btn:hover { background:var(--black); color:var(--cream); }
+        .submit-btn.decrypt { border-color:#1a8a3c; color:#1a8a3c; }
+        .submit-btn.decrypt:hover { background:#1a8a3c; color:var(--cream); }
+        .bottom-strip { margin-top:56px; padding-top:24px; border-top:1px solid rgba(0,0,0,0.12); display:flex; align-items:center; justify-content:space-between; }
+        .bottom-strip .note { font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:var(--mid); }
+        .bottom-strip .stamp { border:2px solid var(--black); padding:5px 12px; transform:rotate(-1deg); }
+        .bottom-strip .stamp span { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:3px; color:var(--black); }
+        @media(max-width:600px) { .cipher-grid{grid-template-columns:1fr;} .cipher-panel:first-child{border-right:none;border-bottom:2px solid var(--black);} .page-header{flex-direction:column;align-items:flex-start;gap:8px;} }
+    </style>
+</head>
+<body>
+<div class="tape-top"></div>
+<div class="page-wrap">
+    <a href="/" class="back-nav">← Back</a>
+    <div class="page-header">
+        <h1>RAIL FENCE<br><span>CIPHER</span></h1>
+        <div class="header-badge">Lab 02 &nbsp;·&nbsp; Cipher 03<br>Transposition &nbsp;·&nbsp; Zigzag</div>
+    </div>
+    <div class="cipher-grid">
+        <div class="cipher-panel">
+            <div class="panel-label"><div class="panel-dot blue"></div><span>Encryption</span></div>
+            <form method="POST" action="/railfence/encrypt">
+                <div class="field-wrap">
+                    <label>Plain Text</label>
+                    <input type="text" name="plain_text" placeholder="Input Plain Text" required autofocus/>
+                </div>
+                <div class="field-wrap">
+                    <label>Number of Rails</label>
+                    <input type="number" name="key" placeholder="e.g. 3" min="2" required/>
+                </div>
+                <button type="submit" class="submit-btn">Encrypt →</button>
+            </form>
+        </div>
+        <div class="cipher-panel">
+            <div class="panel-label"><div class="panel-dot green"></div><span>Decryption</span></div>
+            <form method="POST" action="/railfence/decrypt">
+                <div class="field-wrap">
+                    <label>Cipher Text</label>
+                    <input type="text" name="cipher_text" placeholder="Input Cipher Text" required/>
+                </div>
+                <div class="field-wrap">
+                    <label>Number of Rails</label>
+                    <input type="number" name="key" placeholder="e.g. 3" min="2" required/>
+                </div>
+                <button type="submit" class="submit-btn decrypt">Decrypt →</button>
+            </form>
+        </div>
+    </div>
+    <div class="bottom-strip">
+        <div class="note">Rail Fence &nbsp;·&nbsp; Zigzag Pattern &nbsp;·&nbsp; Classical</div>
+        <div class="stamp"><span>SECURE</span></div>
+    </div>
+</div>
+</body>
+</html>
